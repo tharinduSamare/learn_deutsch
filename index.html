@@ -11,7 +11,14 @@ body{font-family:Arial,sans-serif;background:#f4f7fb;margin:0;padding:20px;color
 <!-- PWA Setup -->
 <link rel="manifest" href="data:application/manifest+json,{\"name\":\"German Trainer\",\"short_name\":\"GermanTrainer\",\"start_url\":\".\",\"display\":\"standalone\",\"background_color\":\"#f4f7fb\",\"theme_color\":\"#2563eb\"}">
 <meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
 </head>
+<script>
+if('serviceWorker' in navigator){
+ navigator.serviceWorker.register('./sw.js');
+}
+</script>
 <body>
 <div class='wrap'>
 <div class='card'>
