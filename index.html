@@ -7,6 +7,10 @@
 <style>
 body{font-family:Arial,sans-serif;background:#f4f7fb;margin:0;padding:20px;color:#222}.wrap{max-width:900px;margin:auto}.card{background:#fff;padding:20px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.08);margin-bottom:20px}.row{display:grid;grid-template-columns:1fr auto auto;gap:10px}.btn{border:none;padding:10px 14px;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff}.btn.secondary{background:#64748b}.btn.green{background:#16a34a}input,select{padding:10px;border:1px solid #cbd5e1;border-radius:10px;width:100%;box-sizing:border-box}.muted{color:#64748b}.big{font-size:30px;font-weight:bold;margin:12px 0}.ok{color:#16a34a}.bad{color:#dc2626}.list{max-height:360px;overflow:auto}.item{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:8px 0;border-bottom:1px solid #eee}@media(max-width:700px){.row,.item{grid-template-columns:1fr}.btn{width:100%}}
 </style>
+
+<!-- PWA Setup -->
+<link rel="manifest" href="data:application/manifest+json,{\"name\":\"German Trainer\",\"short_name\":\"GermanTrainer\",\"start_url\":\".\",\"display\":\"standalone\",\"background_color\":\"#f4f7fb\",\"theme_color\":\"#2563eb\"}">
+<meta name="theme-color" content="#2563eb">
 </head>
 <body>
 <div class='wrap'>
@@ -37,15 +41,87 @@ body{font-family:Arial,sans-serif;background:#f4f7fb;margin:0;padding:20px;color
 <script>
 let words=[];
 let current=null;
+let stats=JSON.parse(localStorage.getItem('gvocab_stats')||'{}');
+
 const SHEET_ID='1jf4Rbrl-zyghEYq-u5CX3P96192JCp0ee6gDaNHL0Js';
 const GID='1584374672';
+
+function keyOf(w){return (w.german+'::'+w.english).toLowerCase();}
+function saveStats(){localStorage.setItem('gvocab_stats',JSON.stringify(stats));}
+
 function loadSheet(){document.getElementById('question').textContent='Loading words...';const old=document.getElementById('sheetLoader');if(old)old.remove();const s=document.createElement('script');s.id='sheetLoader';s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=responseHandler:sheetCallback&gid='+GID;document.body.appendChild(s);}
-function sheetCallback(data){try{const rows=data.table.rows;words=rows.map(r=>({german:(r.c[0]&&r.c[0].v)||'',english:(r.c[1]&&r.c[1].v)||'',comment:(r.c[2]&&r.c[2].v)||''})).filter(w=>w.german&&w.english);render();nextQuestion();}catch(e){document.getElementById('question').textContent='Failed to parse sheet';console.error(e);}}
+
+function sheetCallback(data){try{
+const rows=data.table.rows;
+words=rows.map(r=>({
+  german:(r.c[0]&&r.c[0].v)||'',
+  english:(r.c[1]&&r.c[1].v)||'',
+  comment:(r.c[2]&&r.c[2].v)||''
+})).filter(w=>w.german&&w.english);
+render();nextQuestion();
+}catch(e){document.getElementById('question').textContent='Failed to parse sheet';console.error(e);}}
+
+function weight(w){const k=keyOf(w);const s=stats[k]||{w:0};return 1+(s.w||0)*3;}
+
+function pickWord(){if(!words.length)return null;
+let pool=[];
+words.forEach(w=>{let wt=weight(w);for(let i=0;i<wt;i++)pool.push(w);});return pool[Math.floor(Math.random()*pool.length)];}
+
 function render(){document.getElementById('list').innerHTML=words.map(w=>`<div class='item'><div>${w.german}</div><div>${w.english}</div><div>${w.comment||''}</div></div>`).join('');}
-function nextQuestion(){if(!words.length){document.getElementById('question').textContent='No words loaded';return;}current=words[Math.floor(Math.random()*words.length)];const mode=document.getElementById('mode').value;const q=document.getElementById('question');if(mode==='en-de'){q.innerHTML=current.english+(current.comment?'<div style="font-size:16px;color:#64748b;margin-top:8px">💡 '+current.comment+'</div>':'');}else{q.textContent=current.german;}document.getElementById('answer').value='';document.getElementById('result').textContent='';}
+
+function showStats(){let total=Object.keys(stats).length;let hard=Object.values(stats).filter(s=>s.w>2).length;
+return `📊 Tracked: ${total} | Hard: ${hard}`;}
+
+function nextQuestion(){if(!words.length){document.getElementById('question').textContent='No words loaded';return;}
+current=pickWord();const mode=document.getElementById('mode').value;
+const q=document.getElementById('question');
+let header=`<div style='font-size:14px;color:#64748b;margin-bottom:6px'>${showStats()}</div>`;
+
+if(mode==='en-de'){
+q.innerHTML=header+current.english+(current.comment?'<div style="font-size:16px;color:#64748b;margin-top:8px">💡 '+current.comment+'</div>':'');
+}else{
+q.innerHTML=header+current.german;
+}
+
+document.getElementById('answer').value='';
+document.getElementById('result').textContent='';
+}
+
 function normalize(s){return (s||'').toLowerCase().trim();}
-function checkAnswer(){if(!current)return;const mode=document.getElementById('mode').value;const correct=mode==='en-de'?current.german:current.english;const ans=document.getElementById('answer').value;const r=document.getElementById('result');if(normalize(ans)===normalize(correct)){r.innerHTML="<span class='ok'>✅ Correct!</span>";setTimeout(nextQuestion,700);}else{r.innerHTML="<span class='bad'>❌ Wrong.</span> Correct answer: <b>"+correct+"</b><br>Try again.";}}
+
+function checkAnswer(){if(!current)return;
+const mode=document.getElementById('mode').value;
+const correct=mode==='en-de'?current.german:current.english;
+const ans=document.getElementById('answer').value;
+const r=document.getElementById('result');
+const k=keyOf(current);
+
+if(normalize(ans)===normalize(correct)){
+  r.innerHTML="<span class='ok'>✅ Correct!</span>";
+  if(!stats[k])stats[k]={w:0};
+  stats[k].w=Math.max(0,(stats[k].w||0)-1);
+  saveStats();
+  setTimeout(nextQuestion,700);
+}else{
+  r.innerHTML="<span class='bad'>❌ Wrong.</span> Correct answer: <b>"+correct+"</b><br>Try again.";
+  if(!stats[k])stats[k]={w:0};
+  stats[k].w=(stats[k].w||0)+1;
+  saveStats();
+}
+}
+
 loadSheet();
+// PWA Service Worker
+if('serviceWorker' in navigator){
+  const swCode = `
+  self.addEventListener('install',e=>self.skipWaiting());
+  self.addEventListener('activate',e=>self.clients.claim());
+  self.addEventListener('fetch',e=>{});
+  `;
+  const blob = new Blob([swCode],{type:'text/javascript'});
+  const swURL = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swURL);
+}
 </script>
 </body>
 </html>
