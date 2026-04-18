@@ -37,11 +37,11 @@ body{font-family:Arial,sans-serif;background:#f4f7fb;margin:0;padding:20px;color
 <script>
 let words=[];
 let current=null;
-const SHEET_URL='https://docs.google.com/spreadsheets/d/1jf4Rbrl-zyghEYq-u5CX3P96192JCp0ee6gDaNHL0Js/export?format=csv&gid=1584374672';
+const SHEET_URL='https://docs.google.com/spreadsheets/d/1jf4Rbrl-zyghEYq-u5CX3P96192JCp0ee6gDaNHL0Js/edit?gid=1584374672#gid=1584374672';
 function parseCSVLine(line){const out=[];let cur='';let q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){q=!q;}else if(ch===','&&!q){out.push(cur);cur='';}else{cur+=ch;}}out.push(cur);return out.map(v=>v.trim());}
-async function loadSheet(){const q=document.getElementById('question');q.textContent='Loading words...';try{const res=await fetch(SHEET_URL);const txt=await res.text();const rows=txt.trim().split(/
-?
-/).slice(1);words=rows.map(r=>{const c=parseCSVLine(r);return {german:c[0]||'',english:c[1]||'',comment:c[2]||''};}).filter(w=>w.german&&w.english);render();nextQuestion();}catch(e){q.textContent='Failed to load Google Sheet';}}
+async function loadSheet(){const q=document.getElementById('question');q.textContent='Loading words...';try{const res=await fetch(SHEET_URL);const txt=await res.text();const rows=txt.trim().replace(/
+/g,'').split('
+').slice(1);words=rows.map(r=>{const c=parseCSVLine(r);return {german:c[0]||'',english:c[1]||'',comment:c[2]||''};}).filter(w=>w.german&&w.english);render();nextQuestion();}catch(e){q.textContent='Failed to load Google Sheet';console.error(e);}}
 function render(){const el=document.getElementById('list');el.innerHTML=words.map(w=>`<div class='item'><div>${w.german}</div><div>${w.english}</div><div>${w.comment}</div></div>`).join('');}
 function nextQuestion(){if(words.length===0){document.getElementById('question').textContent='No words loaded';return;}current=words[Math.floor(Math.random()*words.length)];const mode=document.getElementById('mode').value;const q=document.getElementById('question');if(mode==='en-de'){q.innerHTML=current.english+(current.comment?`<div style="font-size:16px;color:#64748b;margin-top:8px">💡 ${current.comment}</div>`:'');}else{q.textContent=current.german;}document.getElementById('answer').value='';document.getElementById('result').textContent='';}
 function normalize(s){return s.toLowerCase().trim();}
