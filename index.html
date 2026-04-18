@@ -37,15 +37,14 @@ body{font-family:Arial,sans-serif;background:#f4f7fb;margin:0;padding:20px;color
 <script>
 let words=[];
 let current=null;
-const SHEET_URL='https://docs.google.com/spreadsheets/d/1jf4Rbrl-zyghEYq-u5CX3P96192JCp0ee6gDaNHL0Js/edit?gid=1584374672#gid=1584374672';
-function parseCSVLine(line){const out=[];let cur='';let q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){q=!q;}else if(ch===','&&!q){out.push(cur);cur='';}else{cur+=ch;}}out.push(cur);return out.map(v=>v.trim());}
-async function loadSheet(){const q=document.getElementById('question');q.textContent='Loading words...';try{const res=await fetch(SHEET_URL);const txt=await res.text();const rows=txt.trim().replace(/
-/g,'').split('
-').slice(1);words=rows.map(r=>{const c=parseCSVLine(r);return {german:c[0]||'',english:c[1]||'',comment:c[2]||''};}).filter(w=>w.german&&w.english);render();nextQuestion();}catch(e){q.textContent='Failed to load Google Sheet';console.error(e);}}
-function render(){const el=document.getElementById('list');el.innerHTML=words.map(w=>`<div class='item'><div>${w.german}</div><div>${w.english}</div><div>${w.comment}</div></div>`).join('');}
-function nextQuestion(){if(words.length===0){document.getElementById('question').textContent='No words loaded';return;}current=words[Math.floor(Math.random()*words.length)];const mode=document.getElementById('mode').value;const q=document.getElementById('question');if(mode==='en-de'){q.innerHTML=current.english+(current.comment?`<div style="font-size:16px;color:#64748b;margin-top:8px">💡 ${current.comment}</div>`:'');}else{q.textContent=current.german;}document.getElementById('answer').value='';document.getElementById('result').textContent='';}
-function normalize(s){return s.toLowerCase().trim();}
-function checkAnswer(){if(!current)return;const mode=document.getElementById('mode').value;const correct=mode==='en-de'?current.german:current.english;const ans=document.getElementById('answer').value;const r=document.getElementById('result');if(normalize(ans)===normalize(correct)){r.innerHTML="<span class='ok'>✅ Correct!</span>";setTimeout(nextQuestion,700);}else{r.innerHTML=`<span class='bad'>❌ Wrong.</span> Correct answer: <b>${correct}</b><br>Try again.`;}}
+const SHEET_ID='1jf4Rbrl-zyghEYq-u5CX3P96192JCp0ee6gDaNHL0Js';
+const GID='1584374672';
+function loadSheet(){document.getElementById('question').textContent='Loading words...';const old=document.getElementById('sheetLoader');if(old)old.remove();const s=document.createElement('script');s.id='sheetLoader';s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=responseHandler:sheetCallback&gid='+GID;document.body.appendChild(s);}
+function sheetCallback(data){try{const rows=data.table.rows;words=rows.map(r=>({german:(r.c[0]&&r.c[0].v)||'',english:(r.c[1]&&r.c[1].v)||'',comment:(r.c[2]&&r.c[2].v)||''})).filter(w=>w.german&&w.english);render();nextQuestion();}catch(e){document.getElementById('question').textContent='Failed to parse sheet';console.error(e);}}
+function render(){document.getElementById('list').innerHTML=words.map(w=>`<div class='item'><div>${w.german}</div><div>${w.english}</div><div>${w.comment||''}</div></div>`).join('');}
+function nextQuestion(){if(!words.length){document.getElementById('question').textContent='No words loaded';return;}current=words[Math.floor(Math.random()*words.length)];const mode=document.getElementById('mode').value;const q=document.getElementById('question');if(mode==='en-de'){q.innerHTML=current.english+(current.comment?'<div style="font-size:16px;color:#64748b;margin-top:8px">💡 '+current.comment+'</div>':'');}else{q.textContent=current.german;}document.getElementById('answer').value='';document.getElementById('result').textContent='';}
+function normalize(s){return (s||'').toLowerCase().trim();}
+function checkAnswer(){if(!current)return;const mode=document.getElementById('mode').value;const correct=mode==='en-de'?current.german:current.english;const ans=document.getElementById('answer').value;const r=document.getElementById('result');if(normalize(ans)===normalize(correct)){r.innerHTML="<span class='ok'>✅ Correct!</span>";setTimeout(nextQuestion,700);}else{r.innerHTML="<span class='bad'>❌ Wrong.</span> Correct answer: <b>"+correct+"</b><br>Try again.";}}
 loadSheet();
 </script>
 </body>
