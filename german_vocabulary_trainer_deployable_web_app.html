@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>German Vocabulary Trainer</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f7fb;margin:0;padding:20px;color:#222} .wrap{max-width:900px;margin:auto}.card{background:#fff;padding:20px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.08);margin-bottom:20px}.row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px}.row2{display:grid;grid-template-columns:1fr auto auto;gap:10px}.btn{border:none;padding:10px 14px;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff}.btn.secondary{background:#64748b}.btn.danger{background:#dc2626}.btn.green{background:#16a34a} input,select{padding:10px;border:1px solid #cbd5e1;border-radius:10px;width:100%;box-sizing:border-box}.muted{color:#64748b}.big{font-size:30px;font-weight:bold;margin:12px 0}.ok{color:#16a34a}.bad{color:#dc2626}.list{max-height:320px;overflow:auto}.item{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid #eee}@media(max-width:700px){.row,.row2,.item{grid-template-columns:1fr}.btn{width:100%}}
+</style>
+</head>
+<body>
+<div class='wrap'>
+<div class='card'>
+<h1>🇩🇪 German Vocabulary Trainer</h1>
+<p class='muted'>Works on phone and laptop. Data saved in your browser.</p>
+</div>
+<div class='card'>
+<h2>Add Word Pair</h2>
+<div class='row'>
+<input id='german' placeholder='German word'>
+<input id='english' placeholder='English word'>
+<button class='btn' onclick='addWord()'>Add</button>
+</div>
+</div>
+<div class='card'>
+<h2>Practice</h2>
+<div class='row2'>
+<select id='mode'>
+<option value='en-de'>English → German</option>
+<option value='de-en'>German → English</option>
+</select>
+<button class='btn secondary' onclick='nextQuestion()'>New Word</button>
+<button class='btn green' onclick='shuffleWords()'>Shuffle</button>
+</div>
+<div id='question' class='big'>Press New Word</div>
+<input id='answer' placeholder='Type your answer' onkeydown="if(event.key==='Enter')checkAnswer()">
+<div style='margin-top:10px'><button class='btn' onclick='checkAnswer()'>Check</button></div>
+<p id='result'></p>
+</div>
+<div class='card'>
+<h2>Saved Words</h2>
+<div class='list' id='list'></div>
+</div>
+</div>
+<script>
+const defaults=[
+{german:'Entdecken',english:'discover'},
+{german:'die Unterstützung',english:'the support'},
+{german:'Schicken',english:'Send'},
+{german:'Veranstalten',english:'Organize'},
+{german:'die Veranstaltung',english:'the event'},
+{german:'der Vortrag',english:'the lecture talk'},
+{german:'die Vorlesung',english:'the lecture'},
+{german:'bereit',english:'Ready'},
+{german:'die Zukunft',english:'the Future'},
+{german:'die Entscheidung',english:'the Decision'}];
+let words=JSON.parse(localStorage.getItem('gvocab')||'null')||defaults;
+let current=null;
+function save(){localStorage.setItem('gvocab',JSON.stringify(words));render();}
+function addWord(){const g=document.getElementById('german').value.trim();const e=document.getElementById('english').value.trim();if(!g||!e)return alert('Enter both words');words.push({german:g,english:e});document.getElementById('german').value='';document.getElementById('english').value='';save();}
+function render(){const el=document.getElementById('list');el.innerHTML=words.map((w,i)=>`<div class='item'><div>${w.german}</div><div>${w.english}</div><button class='btn danger' onclick='delWord(${i})'>Delete</button></div>`).join('');}
+function delWord(i){words.splice(i,1);save();}
+function shuffleWords(){for(let i=words.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[words[i],words[j]]=[words[j],words[i]];}save();nextQuestion();}
+function nextQuestion(){if(words.length===0)return;current=words[Math.floor(Math.random()*words.length)];const mode=document.getElementById('mode').value;document.getElementById('question').textContent=mode==='en-de'?current.english:current.german;document.getElementById('answer').value='';document.getElementById('result').textContent='';}
+function normalize(s){return s.toLowerCase().trim();}
+function checkAnswer(){if(!current)return;const mode=document.getElementById('mode').value;const correct=mode==='en-de'?current.german:current.english;const ans=document.getElementById('answer').value;const r=document.getElementById('result');if(normalize(ans)===normalize(correct)){r.innerHTML="<span class='ok'>✅ Correct!</span>";setTimeout(nextQuestion,700);}else{r.innerHTML=`<span class='bad'>❌ Wrong.</span> Correct answer: <b>${correct}</b><br>Try again.`;}}
+render();
+</script>
+</body>
+</html>
