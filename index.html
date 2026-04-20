@@ -2,85 +2,153 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>German Vocabulary Trainer</title>
-<style>
-body{font-family:Arial,sans-serif;background:#f4f7fb;margin:0;padding:20px;color:#222}
-.wrap{max-width:900px;margin:auto}
-.card{background:#fff;padding:20px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.08);margin-bottom:20px}
-.row{display:grid;grid-template-columns:1fr auto auto;gap:10px}
-.btn{border:none;padding:10px 14px;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff}
-.btn.secondary{background:#64748b}
-.btn.green{background:#16a34a}
-input,select{padding:10px;border:1px solid #cbd5e1;border-radius:10px;width:100%;box-sizing:border-box}
-.muted{color:#64748b}
-.big{font-size:30px;font-weight:bold;margin:12px 0}
-.ok{color:#16a34a}
-.bad{color:#dc2626}
-.list{max-height:360px;overflow:auto}
-.item{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:8px 0;border-bottom:1px solid #eee}
-@media(max-width:700px){.row,.item{grid-template-columns:1fr}.btn{width:100%}}
-</style>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2563eb">
+<style>
+body{
+ font-family:Arial,sans-serif;
+ background:#f4f7fb;
+ margin:0;
+ padding:20px;
+ color:#222;
+}
+.wrap{max-width:900px;margin:auto;}
+.card{
+ background:#fff;
+ padding:20px;
+ border-radius:16px;
+ box-shadow:0 8px 24px rgba(0,0,0,.08);
+ margin-bottom:20px;
+}
+.row{
+ display:grid;
+ grid-template-columns:1fr auto auto auto;
+ gap:10px;
+}
+.btn{
+ border:none;
+ padding:10px 14px;
+ border-radius:10px;
+ cursor:pointer;
+ background:#2563eb;
+ color:#fff;
+}
+.btn.green{background:#16a34a;}
+.btn.gray{background:#64748b;}
+input,select{
+ padding:10px;
+ border:1px solid #cbd5e1;
+ border-radius:10px;
+ width:100%;
+ box-sizing:border-box;
+}
+.big{
+ font-size:30px;
+ font-weight:bold;
+ margin:12px 0;
+}
+.muted{color:#64748b;}
+.ok{color:#16a34a;}
+.bad{color:#dc2626;}
+.list{
+ max-height:350px;
+ overflow:auto;
+}
+.item{
+ display:grid;
+ grid-template-columns:1fr 1fr 1fr;
+ gap:10px;
+ padding:8px 0;
+ border-bottom:1px solid #eee;
+}
+@media(max-width:700px){
+ .row,.item{grid-template-columns:1fr;}
+ .btn{width:100%;}
+}
+</style>
 </head>
 
 <body>
-<div class='wrap'>
+<div class="wrap">
 
-<div class='card'>
+<div class="card">
 <h1>🇩🇪 German Vocabulary Trainer</h1>
-<p class='muted'>Loads words directly from your Google Sheet.</p>
-<p id="wordCount" class="muted">📚 Available Words: 0</p>
+<p id="progress" class="muted">Loading words...</p>
 </div>
 
-<div class='card'>
+<div class="card">
 <h2>Practice</h2>
 
-<div class='row'>
-<select id='mode'>
-<option value='en-de'>English → German</option>
-<option value='de-en'>German → English</option>
+<div class="row">
+<select id="mode">
+<option value="en-de">English → German</option>
+<option value="de-en">German → English</option>
 </select>
 
-<button class='btn secondary' onclick='nextQuestion()'>New Word</button>
-<button class='btn green' onclick='loadSheet()'>Refresh Sheet</button>
+<button class="btn green" onclick="randomizeQueue()">🔀 Randomize</button>
+<button class="btn gray" onclick="restartQueue()">↩ Restart</button>
+<button class="btn" onclick="nextQuestion()">Next</button>
 </div>
 
-<div id='question' class='big'>Loading words...</div>
+<div id="question" class="big">Loading...</div>
 
-<input id='answer' placeholder='Type your answer'
+<input id="answer" placeholder="Type your answer"
 onkeydown="if(event.key==='Enter')checkAnswer()">
 
-<div style='margin-top:10px'>
-<button class='btn' onclick='checkAnswer()'>Check</button>
+<div style="margin-top:10px;">
+<button class="btn" onclick="checkAnswer()">Check</button>
 </div>
 
-<p id='result'></p>
+<p id="result"></p>
 </div>
 
-<div class='card'>
-<h2>Words From Google Sheet</h2>
-<div class='list' id='list'></div>
+<div class="card">
+<h2>All Words</h2>
+<div class="list" id="list"></div>
 </div>
 
 </div>
 
 <script>
 let words=[];
+let queue=[];
+let queueIndex=0;
 let current=null;
-let stats=JSON.parse(localStorage.getItem('gvocab_stats')||'{}');
 
 const SHEET_ID='1jf4Rbrl-zyghEYq-u5CX3P96192JCp0ee6gDaNHL0Js';
 const GID='1584374672';
 
-function keyOf(w){
- return (w.german+'::'+w.english).toLowerCase();
+function saveQueue(){
+ localStorage.setItem('gvocab_queue',JSON.stringify(queue));
+ localStorage.setItem('gvocab_index',queueIndex);
 }
 
-function saveStats(){
- localStorage.setItem('gvocab_stats',JSON.stringify(stats));
+function loadSavedQueue(){
+ queue=JSON.parse(localStorage.getItem('gvocab_queue')||'[]');
+ queueIndex=parseInt(localStorage.getItem('gvocab_index')||'0');
+}
+
+function shuffle(arr){
+ for(let i=arr.length-1;i>0;i--){
+   let j=Math.floor(Math.random()*(i+1));
+   [arr[i],arr[j]]=[arr[j],arr[i]];
+ }
+ return arr;
+}
+
+function randomizeQueue(){
+ queue=[...Array(words.length).keys()];
+ shuffle(queue);
+ queueIndex=0;
+ saveQueue();
+ nextQuestion();
+}
+
+function restartQueue(){
+ queueIndex=0;
+ saveQueue();
+ nextQuestion();
 }
 
 function loadSheet(){
@@ -107,73 +175,70 @@ function sheetCallback(data){
      comment:(r.c[2]&&r.c[2].v)||''
    })).filter(w=>w.german && w.english);
 
-   document.getElementById("wordCount").textContent =
-   "📚 Available Words: " + words.length;
+   renderList();
 
-   render();
-   nextQuestion();
+   loadSavedQueue();
+
+   if(queue.length!==words.length){
+     randomizeQueue();
+   }else{
+     nextQuestion();
+   }
 
  }catch(e){
-   document.getElementById('question').textContent='Failed to parse sheet';
+   document.getElementById('question').textContent='Failed to load sheet';
    console.error(e);
  }
 }
 
-function weight(w){
- const k=keyOf(w);
- const s=stats[k]||{w:0};
- return 1+(s.w||0)*3;
-}
-
-function pickWord(){
- if(!words.length) return null;
-
- let pool=[];
- words.forEach(w=>{
-   let wt=weight(w);
-   for(let i=0;i<wt;i++) pool.push(w);
- });
-
- return pool[Math.floor(Math.random()*pool.length)];
-}
-
-function render(){
+function renderList(){
  document.getElementById('list').innerHTML=
  words.map(w=>`
-   <div class='item'>
-     <div>${w.german}</div>
-     <div>${w.english}</div>
-     <div>${w.comment||''}</div>
-   </div>
+ <div class="item">
+   <div>${w.german}</div>
+   <div>${w.english}</div>
+   <div>${w.comment||''}</div>
+ </div>
  `).join('');
 }
 
-function showStats(){
- let total=Object.keys(stats).length;
- let hard=Object.values(stats).filter(s=>s.w>2).length;
- return `📊 Tracked: ${total} | Hard: ${hard}`;
+function updateProgress(){
+ const done=queueIndex;
+ const total=words.length;
+ const remain=total-done;
+
+ document.getElementById('progress').textContent=
+ `📚 Completed: ${done} / ${total} | Remaining: ${remain}`;
 }
 
 function nextQuestion(){
- if(!words.length){
+
+ if(!queue.length){
    document.getElementById('question').textContent='No words loaded';
    return;
  }
 
- current=pickWord();
+ if(queueIndex>=queue.length){
+   updateProgress();
+   document.getElementById('question').innerHTML=
+   '🎉 All words completed.<br><span class="muted">Press Randomize for a new order.</span>';
+   return;
+ }
+
+ current=words[queue[queueIndex]];
+
+ updateProgress();
 
  const mode=document.getElementById('mode').value;
  const q=document.getElementById('question');
 
- let header=`<div style='font-size:14px;color:#64748b;margin-bottom:6px'>${showStats()}</div>`;
-
  if(mode==='en-de'){
-   q.innerHTML=header+current.english+
+   q.innerHTML=current.english+
    (current.comment?
-   '<div style="font-size:16px;color:#64748b;margin-top:8px">💡 '+current.comment+'</div>'
+   '<div style="font-size:16px;color:#64748b;margin-top:8px;">💡 '+current.comment+'</div>'
    :'');
  }else{
-   q.innerHTML=header+current.german;
+   q.textContent=current.german;
  }
 
  document.getElementById('answer').value='';
@@ -185,39 +250,34 @@ function normalize(s){
 }
 
 function checkAnswer(){
+
  if(!current) return;
 
  const mode=document.getElementById('mode').value;
- const correct=mode==='en-de'?current.german:current.english;
+ const correct=(mode==='en-de')?current.german:current.english;
  const ans=document.getElementById('answer').value;
+
  const r=document.getElementById('result');
- const k=keyOf(current);
 
  if(normalize(ans)===normalize(correct)){
-   r.innerHTML="<span class='ok'>✅ Correct!</span>";
 
-   if(!stats[k]) stats[k]={w:0};
-   stats[k].w=Math.max(0,(stats[k].w||0)-1);
+   r.innerHTML='<span class="ok">✅ Correct!</span>';
 
-   saveStats();
-   setTimeout(nextQuestion,700);
+   queueIndex++;
+   saveQueue();
+
+   setTimeout(nextQuestion,600);
 
  }else{
-   r.innerHTML="<span class='bad'>❌ Wrong.</span> Correct answer: <b>"+correct+"</b><br>Try again.";
 
-   if(!stats[k]) stats[k]={w:0};
-   stats[k].w=(stats[k].w||0)+1;
-
-   saveStats();
+   r.innerHTML=
+   '<span class="bad">❌ Wrong.</span> Correct answer: <b>'+
+   correct+
+   '</b><br>Try again.';
  }
 }
 
 loadSheet();
-
-if('serviceWorker' in navigator){
- navigator.serviceWorker.register('./sw.js');
-}
 </script>
-
 </body>
 </html>
