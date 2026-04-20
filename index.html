@@ -3,72 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>German Vocabulary Trainer</title>
+
+<!-- Cache Fix -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>German Vocabulary Trainer</title>
 
 <style>
-body{
- font-family:Arial,sans-serif;
- background:#f4f7fb;
- margin:0;
- padding:20px;
- color:#222;
-}
-.wrap{max-width:900px;margin:auto;}
-.card{
- background:#fff;
- padding:20px;
- border-radius:16px;
- box-shadow:0 8px 24px rgba(0,0,0,.08);
- margin-bottom:20px;
-}
-.row{
- display:grid;
- grid-template-columns:1fr auto auto auto;
- gap:10px;
-}
-.btn{
- border:none;
- padding:10px 14px;
- border-radius:10px;
- cursor:pointer;
- background:#2563eb;
- color:#fff;
-}
-.btn.green{background:#16a34a;}
-.btn.gray{background:#64748b;}
-input,select{
- padding:10px;
- border:1px solid #cbd5e1;
- border-radius:10px;
- width:100%;
- box-sizing:border-box;
-}
-.big{
- font-size:30px;
- font-weight:bold;
- margin:12px 0;
-}
-.muted{color:#64748b;}
-.ok{color:#16a34a;}
-.bad{color:#dc2626;}
-.list{
- max-height:350px;
- overflow:auto;
-}
-.item{
- display:grid;
- grid-template-columns:1fr 1fr 1fr;
- gap:10px;
- padding:8px 0;
- border-bottom:1px solid #eee;
-}
-@media(max-width:700px){
- .row,.item{grid-template-columns:1fr;}
- .btn{width:100%;}
-}
+body{font-family:Arial,sans-serif;background:#f4f7fb;margin:0;padding:20px;color:#222}
+.wrap{max-width:900px;margin:auto}
+.card{background:#fff;padding:20px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.08);margin-bottom:20px}
+.row{display:grid;grid-template-columns:1fr auto auto auto;gap:10px}
+.btn{border:none;padding:10px 14px;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff}
+.btn.green{background:#16a34a}
+.btn.gray{background:#64748b}
+input,select{padding:10px;border:1px solid #cbd5e1;border-radius:10px;width:100%;box-sizing:border-box}
+.big{font-size:30px;font-weight:bold;margin:12px 0}
+.muted{color:#64748b}
+.ok{color:#16a34a}
+.bad{color:#dc2626}
+.list{max-height:350px;overflow:auto}
+.item{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:8px 0;border-bottom:1px solid #eee}
+@media(max-width:700px){.row,.item{grid-template-columns:1fr}.btn{width:100%}}
 </style>
 </head>
 
@@ -77,7 +34,7 @@ input,select{
 
 <div class="card">
 <h1>🇩🇪 German Vocabulary Trainer</h1>
-<p id="progress" class="muted">Loading words...</p>
+<p id="progress" class="muted">Loading...</p>
 </div>
 
 <div class="card">
@@ -91,7 +48,7 @@ input,select{
 
 <button class="btn green" onclick="randomizeQueue()">🔀 Randomize</button>
 <button class="btn gray" onclick="restartQueue()">↩ Restart</button>
-<button class="btn" onclick="nextQuestion()">Next</button>
+<button class="btn" onclick="skipNext()">Next</button>
 </div>
 
 <div id="question" class="big">Loading...</div>
@@ -99,7 +56,7 @@ input,select{
 <input id="answer" placeholder="Type your answer"
 onkeydown="if(event.key==='Enter')checkAnswer()">
 
-<div style="margin-top:10px;">
+<div style="margin-top:10px">
 <button class="btn" onclick="checkAnswer()">Check</button>
 </div>
 
@@ -107,7 +64,7 @@ onkeydown="if(event.key==='Enter')checkAnswer()">
 </div>
 
 <div class="card">
-<h2>All Words</h2>
+<h2>Words</h2>
 <div class="list" id="list"></div>
 </div>
 
@@ -123,18 +80,18 @@ const SHEET_ID='1jf4Rbrl-zyghEYq-u5CX3P96192JCp0ee6gDaNHL0Js';
 const GID='1584374672';
 
 function saveQueue(){
- localStorage.setItem('gvocab_queue',JSON.stringify(queue));
- localStorage.setItem('gvocab_index',queueIndex);
+ localStorage.setItem('queue_words',JSON.stringify(queue));
+ localStorage.setItem('queue_index',queueIndex);
 }
 
-function loadSavedQueue(){
- queue=JSON.parse(localStorage.getItem('gvocab_queue')||'[]');
- queueIndex=parseInt(localStorage.getItem('gvocab_index')||'0');
+function loadQueue(){
+ queue=JSON.parse(localStorage.getItem('queue_words')||'[]');
+ queueIndex=parseInt(localStorage.getItem('queue_index')||'0');
 }
 
 function shuffle(arr){
  for(let i=arr.length-1;i>0;i--){
-   let j=Math.floor(Math.random()*(i+1));
+   const j=Math.floor(Math.random()*(i+1));
    [arr[i],arr[j]]=[arr[j],arr[i]];
  }
  return arr;
@@ -154,16 +111,40 @@ function restartQueue(){
  nextQuestion();
 }
 
-function loadSheet(){
- document.getElementById('question').textContent='Loading words...';
+function skipNext(){
+ queueIndex++;
+ saveQueue();
+ nextQuestion();
+}
 
+function updateProgress(){
+ let total=words.length;
+ let done=Math.min(queueIndex,total);
+ let remain=Math.max(total-done,0);
+
+ document.getElementById('progress').textContent=
+ `📚 Completed: ${done} / ${total} | Remaining: ${remain}`;
+}
+
+function renderList(){
+ document.getElementById('list').innerHTML=
+ words.map(w=>`
+ <div class="item">
+   <div>${w.german}</div>
+   <div>${w.english}</div>
+   <div>${w.comment||''}</div>
+ </div>
+ `).join('');
+}
+
+function loadSheet(){
  const old=document.getElementById('sheetLoader');
  if(old) old.remove();
 
  const s=document.createElement('script');
  s.id='sheetLoader';
  s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+
- '/gviz/tq?tqx=responseHandler:sheetCallback&gid='+GID;
+ '/gviz/tq?tqx=responseHandler:sheetCallback&gid='+GID+'&t='+(Date.now());
 
  document.body.appendChild(s);
 }
@@ -180,7 +161,7 @@ function sheetCallback(data){
 
    renderList();
 
-   loadSavedQueue();
+   loadQueue();
 
    if(queue.length!==words.length){
      randomizeQueue();
@@ -189,59 +170,30 @@ function sheetCallback(data){
    }
 
  }catch(e){
-   document.getElementById('question').textContent='Failed to load sheet';
-   console.error(e);
+   document.getElementById('question').textContent='Failed loading sheet';
  }
-}
-
-function renderList(){
- document.getElementById('list').innerHTML=
- words.map(w=>`
- <div class="item">
-   <div>${w.german}</div>
-   <div>${w.english}</div>
-   <div>${w.comment||''}</div>
- </div>
- `).join('');
-}
-
-function updateProgress(){
- const done=queueIndex;
- const total=words.length;
- const remain=total-done;
-
- document.getElementById('progress').textContent=
- `📚 Completed: ${done} / ${total} | Remaining: ${remain}`;
 }
 
 function nextQuestion(){
 
- if(!queue.length){
-   document.getElementById('question').textContent='No words loaded';
-   return;
- }
+ updateProgress();
 
  if(queueIndex>=queue.length){
-   updateProgress();
    document.getElementById('question').innerHTML=
-   '🎉 All words completed.<br><span class="muted">Press Randomize for a new order.</span>';
+   '🎉 All words completed.<br><span class="muted">Press Randomize</span>';
    return;
  }
 
  current=words[queue[queueIndex]];
-
- updateProgress();
-
  const mode=document.getElementById('mode').value;
- const q=document.getElementById('question');
 
  if(mode==='en-de'){
-   q.innerHTML=current.english+
+   document.getElementById('question').innerHTML=
+   current.english+
    (current.comment?
-   '<div style="font-size:16px;color:#64748b;margin-top:8px;">💡 '+current.comment+'</div>'
-   :'');
+   '<div style="font-size:16px;color:#64748b;margin-top:8px">💡 '+current.comment+'</div>':'');
  }else{
-   q.textContent=current.german;
+   document.getElementById('question').textContent=current.german;
  }
 
  document.getElementById('answer').value='';
@@ -260,23 +212,20 @@ function checkAnswer(){
  const correct=(mode==='en-de')?current.german:current.english;
  const ans=document.getElementById('answer').value;
 
- const r=document.getElementById('result');
-
  if(normalize(ans)===normalize(correct)){
 
-   r.innerHTML='<span class="ok">✅ Correct!</span>';
+   document.getElementById('result').innerHTML=
+   '<span class="ok">✅ Correct!</span>';
 
    queueIndex++;
    saveQueue();
 
-   setTimeout(nextQuestion,600);
+   setTimeout(nextQuestion,500);
 
  }else{
 
-   r.innerHTML=
-   '<span class="bad">❌ Wrong.</span> Correct answer: <b>'+
-   correct+
-   '</b><br>Try again.';
+   document.getElementById('result').innerHTML=
+   '<span class="bad">❌ Wrong.</span> Correct answer: <b>'+correct+'</b>';
  }
 }
 
