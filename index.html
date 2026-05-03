@@ -144,7 +144,7 @@ function loadSheet(){
  const s=document.createElement('script');
  s.id='sheetLoader';
  s.src = 'https://docs.google.com/spreadsheets/d/'+SHEET_ID+
- '/gviz/tq?tqx=responseHandler:sheetCallback&gid='+GID+
+ '/gviz/tq?tqx=responseHandler:sheetCallback;headers=1&gid='+GID+
  '&tq=select A,B,C&t='+(Date.now());
 
  document.body.appendChild(s);
