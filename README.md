@@ -1,4 +1,4 @@
-# Lear Deutsch Vocabulary
+# Learn Deutsch Vocabulary
 
 - This app helps to learn German vocabulary
 - Link: [German Vocabulary Trainer](https://tharindusamare.github.io/learn_deutsch/)
