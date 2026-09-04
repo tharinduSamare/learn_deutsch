@@ -1,8 +1,11 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
 <title>German Vocabulary Trainer</title>
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -10,6 +13,7 @@
 <meta http-equiv="Expires" content="0">
 
 <style>
+
 body{
   font-family:Arial,sans-serif;
   background:#f4f7fb;
@@ -46,12 +50,24 @@ body{
   color:#fff;
 }
 
+.btn:hover{
+  opacity:.9;
+}
+
 .btn.green{
   background:#16a34a;
 }
 
 .btn.gray{
   background:#64748b;
+}
+
+.btn.red{
+  background:#dc2626;
+}
+
+.btn.speak{
+  background:#7c3aed;
 }
 
 input,select{
@@ -103,9 +119,57 @@ input,select{
   font-size:14px;
 }
 
+.speakingPanel{
+  margin-top:15px;
+  padding:15px;
+  border-radius:12px;
+  background:#f5f3ff;
+  border:1px solid #ddd6fe;
+}
+
+.speakingStatus{
+  margin-top:10px;
+  font-weight:bold;
+  color:#7c3aed;
+}
+
+.settingsGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:12px;
+  margin-top:15px;
+}
+
+.setting{
+  background:#f8fafc;
+  padding:12px;
+  border-radius:10px;
+}
+
+.setting label{
+  display:block;
+  font-size:14px;
+  font-weight:bold;
+  margin-bottom:6px;
+}
+
+.setting input[type="range"]{
+  width:100%;
+}
+
+.rangeValue{
+  color:#64748b;
+  font-weight:normal;
+}
+
+.disabled{
+  opacity:.5;
+  pointer-events:none;
+}
+
 @media(max-width:700px){
 
-  .row,.item{
+  .row,.item,.settingsGrid{
     grid-template-columns:1fr;
   }
 
@@ -113,123 +177,542 @@ input,select{
     width:100%;
   }
 
+  .big{
+    font-size:25px;
+  }
+
 }
+
 </style>
+
 </head>
+
 
 <body>
 
 <div class="wrap">
 
+
+<!-- ============================================================
+     HEADER
+============================================================ -->
+
 <div class="card">
+
 <h1>🇩🇪 German Vocabulary Trainer</h1>
-<p id="progress" class="muted">Loading...</p>
+
+<p id="progress" class="muted">
+Loading...
+</p>
+
 </div>
+
+
+<!-- ============================================================
+     PRACTICE
+============================================================ -->
 
 <div class="card">
 
 <h2>Practice</h2>
 
+
+<!-- RANGE FILTERS -->
+
 <div style="margin-bottom:15px">
 
 <div style="margin-bottom:8px">
-<button class="btn gray" onclick="selectAllRanges()">Select All</button>
-<button class="btn gray" onclick="deselectAllRanges()">Deselect All</button>
+
+<button
+  class="btn gray"
+  onclick="selectAllRanges()">
+  Select All
+</button>
+
+<button
+  class="btn gray"
+  onclick="deselectAllRanges()">
+  Deselect All
+</button>
+
 </div>
 
-<div id="rangeFilters" style="
-display:flex;
-flex-wrap:wrap;
-gap:10px;
-margin-top:10px;
-"></div>
+<div
+  id="rangeFilters"
+  style="
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:10px;
+  ">
+</div>
 
 </div>
+
+
+<!-- MODE + QUEUE CONTROLS -->
 
 <div class="row">
 
 <select id="mode">
-<option value="en-de">English → German</option>
-<option value="de-en">German → English</option>
+
+<option value="en-de">
+English → German
+</option>
+
+<option value="de-en">
+German → English
+</option>
+
 </select>
 
-<button class="btn green" onclick="randomizeQueue()">🔀 Randomize</button>
-<button class="btn gray" onclick="restartQueue()">↩ Restart</button>
-<button class="btn" onclick="skipNext()">Next</button>
+
+<button
+  class="btn green"
+  onclick="randomizeQueue()">
+  🔀 Randomize
+</button>
+
+
+<button
+  class="btn gray"
+  onclick="restartQueue()">
+  ↩ Restart
+</button>
+
+
+<button
+  class="btn"
+  onclick="skipNext()">
+  Next
+</button>
 
 </div>
 
-<div id="question" class="big">Loading...</div>
 
-<input id="answer"
-placeholder="Type your answer"
-onkeydown="if(event.key==='Enter')checkAnswer()">
+<!-- ============================================================
+     SPEAKING MODE
+============================================================ -->
+
+<div class="speakingPanel">
+
+<div style="
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:15px;
+flex-wrap:wrap;
+">
+
+<div>
+
+<strong style="font-size:18px;">
+🔊 Speaking Mode
+</strong>
+
+<div class="muted" style="margin-top:5px;">
+
+Automatically speaks the question,
+waits, speaks the answer, and continues.
+
+</div>
+
+</div>
+
+
+<button
+  id="speakingBtn"
+  class="btn speak"
+  onclick="toggleSpeakingMode()">
+
+🔊 Start Speaking
+
+</button>
+
+</div>
+
+
+<div
+  id="speakingStatus"
+  class="speakingStatus">
+</div>
+
+
+<!-- SPEAKING SETTINGS -->
+
+<div
+  id="speakingSettings"
+  class="settingsGrid disabled">
+
+
+<div class="setting">
+
+<label>
+
+Question delay:
+<span
+  id="questionDelayValue"
+  class="rangeValue">
+3 s
+</span>
+
+</label>
+
+<input
+  type="range"
+  id="questionDelay"
+  min="1"
+  max="10"
+  step="1"
+  value="3">
+
+</div>
+
+
+<div class="setting">
+
+<label>
+
+Answer delay:
+<span
+  id="answerDelayValue"
+  class="rangeValue">
+2 s
+</span>
+
+</label>
+
+<input
+  type="range"
+  id="answerDelay"
+  min="1"
+  max="10"
+  step="1"
+  value="2">
+
+</div>
+
+
+<div class="setting">
+
+<label>
+
+Speech speed:
+<span
+  id="speechRateValue"
+  class="rangeValue">
+0.9
+</span>
+
+</label>
+
+<input
+  type="range"
+  id="speechRate"
+  min="0.5"
+  max="1.5"
+  step="0.1"
+  value="0.9">
+
+</div>
+
+
+</div>
+
+</div>
+
+
+<!-- ============================================================
+     QUESTION
+============================================================ -->
+
+<div
+  id="question"
+  class="big">
+
+Loading...
+
+</div>
+
+
+<!-- NORMAL TYPING MODE -->
+
+<div id="typingControls">
+
+<input
+  id="answer"
+  placeholder="Type your answer"
+  onkeydown="
+    if(event.key==='Enter')
+      checkAnswer()
+  ">
+
 
 <div style="margin-top:10px">
-<button class="btn" onclick="checkAnswer()">Check</button>
+
+<button
+  class="btn"
+  onclick="checkAnswer()">
+
+Check
+
+</button>
+
 </div>
+
+</div>
+
 
 <p id="result"></p>
 
+
 </div>
+
+
+<!-- ============================================================
+     WORD LIST
+============================================================ -->
 
 <div class="card">
 
 <h2>Words</h2>
 
-<div class="list" id="list"></div>
-
+<div
+  class="list"
+  id="list">
 </div>
 
 </div>
+
+
+</div>
+
 
 <script>
 
-let words=[];
-let queue=[];
-let queueIndex=0;
-let current=null;
 
-const SHEET_ID='1jf4Rbrl-zyghEYq-u5CX3P96192JCp0ee6gDaNHL0Js';
-const GID='1584374672';
+/* ============================================================
+   GLOBAL STATE
+============================================================ */
+
+let words = [];
+
+let queue = [];
+
+let queueIndex = 0;
+
+let current = null;
+
+
+/* ============================================================
+   GOOGLE SHEET
+============================================================ */
+
+const SHEET_ID =
+'1jf4Rbrl-zyghEYq-u5CX3P96192JCp0ee6gDaNHL0Js';
+
+const GID =
+'1584374672';
+
+
+/* ============================================================
+   SPEAKING MODE STATE
+============================================================ */
+
+let speakingMode = false;
+
+let speakingTimer = null;
+
+let speakingStep = 0;
+
+let questionDelay = 3;
+
+let answerDelay = 2;
+
+let speechRate = 0.9;
+
+
+/* ============================================================
+   LOCAL STORAGE
+============================================================ */
 
 function saveQueue(){
 
- localStorage.setItem('queue_words',JSON.stringify(queue));
- localStorage.setItem('queue_index',queueIndex);
+  localStorage.setItem(
+    'queue_words',
+    JSON.stringify(queue)
+  );
+
+  localStorage.setItem(
+    'queue_index',
+    queueIndex
+  );
 
 }
+
 
 function loadQueue(){
 
- queue=JSON.parse(localStorage.getItem('queue_words')||'[]');
+  queue =
+    JSON.parse(
+      localStorage.getItem(
+        'queue_words'
+      ) || '[]'
+    );
 
- queueIndex=parseInt(
-   localStorage.getItem('queue_index')||'0'
- );
+  queueIndex =
+    parseInt(
+      localStorage.getItem(
+        'queue_index'
+      ) || '0'
+    );
 
 }
+
+
+/* ============================================================
+   SPEAKING SETTINGS STORAGE
+============================================================ */
+
+function saveSpeakingSettings(){
+
+  localStorage.setItem(
+    'speaking_question_delay',
+    questionDelay
+  );
+
+  localStorage.setItem(
+    'speaking_answer_delay',
+    answerDelay
+  );
+
+  localStorage.setItem(
+    'speaking_rate',
+    speechRate
+  );
+
+}
+
+
+function loadSpeakingSettings(){
+
+  questionDelay =
+    parseInt(
+      localStorage.getItem(
+        'speaking_question_delay'
+      ) || '3'
+    );
+
+  answerDelay =
+    parseInt(
+      localStorage.getItem(
+        'speaking_answer_delay'
+      ) || '2'
+    );
+
+  speechRate =
+    parseFloat(
+      localStorage.getItem(
+        'speaking_rate'
+      ) || '0.9'
+    );
+
+
+  document.getElementById(
+    'questionDelay'
+  ).value =
+    questionDelay;
+
+
+  document.getElementById(
+    'answerDelay'
+  ).value =
+    answerDelay;
+
+
+  document.getElementById(
+    'speechRate'
+  ).value =
+    speechRate;
+
+
+  updateSpeakingSettingsDisplay();
+
+}
+
+
+function updateSpeakingSettingsDisplay(){
+
+  document.getElementById(
+    'questionDelayValue'
+  ).textContent =
+    questionDelay + ' s';
+
+
+  document.getElementById(
+    'answerDelayValue'
+  ).textContent =
+    answerDelay + ' s';
+
+
+  document.getElementById(
+    'speechRateValue'
+  ).textContent =
+    speechRate.toFixed(1);
+
+}
+
+
+/* ============================================================
+   SHUFFLE
+============================================================ */
 
 function shuffle(arr){
 
- for(let i=arr.length-1;i>0;i--){
+  for(
+    let i=arr.length-1;
+    i>0;
+    i--
+  ){
 
-   const j=Math.floor(Math.random()*(i+1));
+    const j =
+      Math.floor(
+        Math.random()*(i+1)
+      );
 
-   [arr[i],arr[j]]=[arr[j],arr[i]];
- }
+    [
+      arr[i],
+      arr[j]
+    ] =
+    [
+      arr[j],
+      arr[i]
+    ];
 
- return arr;
+  }
+
+  return arr;
+
 }
 
+
+/* ============================================================
+   RANGE SELECTION
+============================================================ */
 
 function saveSelectedRanges(){
 
   const selected = [];
 
-  document.querySelectorAll('.rangeCheck').forEach((c,i)=>{
-    if(c.checked) selected.push(i);
-  });
+  document
+    .querySelectorAll('.rangeCheck')
+    .forEach((c,i)=>{
+
+      if(c.checked)
+        selected.push(i);
+
+    });
+
 
   localStorage.setItem(
     'selected_ranges',
@@ -238,304 +721,1365 @@ function saveSelectedRanges(){
 
 }
 
+
 function loadSelectedRanges(){
 
   const selected =
-    JSON.parse(localStorage.getItem('selected_ranges') || 'null');
+    JSON.parse(
+      localStorage.getItem(
+        'selected_ranges'
+      ) || 'null'
+    );
+
 
   if(selected === null){
-    return;   // first visit -> keep all checked
+    return;
   }
 
-  document.querySelectorAll('.rangeCheck').forEach((c,i)=>{
-    c.checked = selected.includes(i);
-  });
+
+  document
+    .querySelectorAll('.rangeCheck')
+    .forEach((c,i)=>{
+
+      c.checked =
+        selected.includes(i);
+
+    });
 
 }
+
 
 function selectAllRanges(){
 
- document.querySelectorAll('.rangeCheck')
- .forEach(c=>c.checked=true);
+  document
+    .querySelectorAll('.rangeCheck')
+    .forEach(c=>{
 
- saveSelectedRanges();
+      c.checked=true;
+
+    });
+
+  saveSelectedRanges();
 
 }
+
 
 function deselectAllRanges(){
 
- document.querySelectorAll('.rangeCheck')
- .forEach(c=>c.checked=false);
+  document
+    .querySelectorAll('.rangeCheck')
+    .forEach(c=>{
 
- saveSelectedRanges();
+      c.checked=false;
+
+    });
+
+  saveSelectedRanges();
 
 }
+
+
+/* ============================================================
+   RANGE FILTER UI
+============================================================ */
 
 function buildRangeFilters(){
 
- const container=document.getElementById('rangeFilters');
+  const container =
+    document.getElementById(
+      'rangeFilters'
+    );
 
- const total=words.length;
+  const total =
+    words.length;
 
- let html='';
+  let html='';
 
- for(let start=1; start<=total; start+=100){
 
-   let end=Math.min(start+99,total);
+  for(
+    let start=1;
+    start<=total;
+    start+=100
+  ){
 
-   let label=(end===total)
-     ? `${start}-end`
-     : `${start}-${end}`;
+    let end =
+      Math.min(
+        start+99,
+        total
+      );
 
-   html += `
-   <label class="rangeBox">
-     <input type="checkbox"
-            class="rangeCheck"
-            value="${start-1},${end-1}"
-            checked
-            onchange="saveSelectedRanges()">
-     ${label}
-   </label>
-   `;
- }
 
- container.innerHTML=html;
+    let label =
+      (end===total)
+      ? `${start}-end`
+      : `${start}-${end}`;
+
+
+    html += `
+
+    <label class="rangeBox">
+
+      <input
+        type="checkbox"
+        class="rangeCheck"
+        value="${start-1},${end-1}"
+        checked
+        onchange="saveSelectedRanges()">
+
+      ${label}
+
+    </label>
+
+    `;
+
+  }
+
+
+  container.innerHTML =
+    html;
+
 }
+
+
+/* ============================================================
+   GET SELECTED WORD INDEXES
+============================================================ */
 
 function getSelectedIndexes(){
 
- const checks=document.querySelectorAll('.rangeCheck:checked');
+  const checks =
+    document.querySelectorAll(
+      '.rangeCheck:checked'
+    );
 
- let indexes=[];
+  let indexes=[];
 
- checks.forEach(c=>{
 
-   const parts=c.value.split(',');
+  checks.forEach(c=>{
 
-   const start=parseInt(parts[0]);
-   const end=parseInt(parts[1]);
+    const parts =
+      c.value.split(',');
 
-   for(let i=start;i<=end;i++){
+    const start =
+      parseInt(parts[0]);
 
-     indexes.push(i);
+    const end =
+      parseInt(parts[1]);
 
-   }
 
- });
+    for(
+      let i=start;
+      i<=end;
+      i++
+    ){
 
- return indexes;
+      indexes.push(i);
+
+    }
+
+  });
+
+
+  return indexes;
+
 }
 
-function selectAllRanges(){
 
- document.querySelectorAll('.rangeCheck')
- .forEach(c=>c.checked=true);
-
-}
-
-function deselectAllRanges(){
-
- document.querySelectorAll('.rangeCheck')
- .forEach(c=>c.checked=false);
-
-}
+/* ============================================================
+   RANDOMIZE QUEUE
+============================================================ */
 
 function randomizeQueue(){
 
- saveSelectedRanges()
+  saveSelectedRanges();
 
- const selected=getSelectedIndexes();
 
- if(selected.length===0){
+  const selected =
+    getSelectedIndexes();
 
-   alert('Please select at least one range');
-   return;
- }
 
- queue=[...selected];
+  if(selected.length===0){
 
- shuffle(queue);
+    alert(
+      'Please select at least one range'
+    );
 
- queueIndex=0;
+    return;
 
- saveQueue();
+  }
 
- nextQuestion();
+
+  queue =
+    [...selected];
+
+  shuffle(queue);
+
+  queueIndex=0;
+
+  saveQueue();
+
+
+  nextQuestion();
+
+
+  /*
+   * If speaking mode is already active,
+   * start the new sequence immediately.
+   */
+
+  if(speakingMode){
+
+    startSpeakingSequence();
+
+  }
+
 }
+
+
+/* ============================================================
+   RESTART QUEUE
+============================================================ */
 
 function restartQueue(){
 
- queueIndex=0;
+  stopSpeakingSequence();
 
- saveQueue();
+  queueIndex=0;
 
- nextQuestion();
+  saveQueue();
+
+  nextQuestion();
+
 }
+
+
+/* ============================================================
+   SKIP NEXT
+============================================================ */
 
 function skipNext(){
 
- queueIndex++;
+  stopSpeakingSequence();
 
- saveQueue();
+  queueIndex++;
 
- nextQuestion();
+  saveQueue();
+
+  nextQuestion();
+
 }
+
+
+/* ============================================================
+   PROGRESS
+============================================================ */
 
 function updateProgress(){
 
- let total=queue.length;
+  let total =
+    queue.length;
 
- let done=Math.min(queueIndex,total);
+  let done =
+    Math.min(
+      queueIndex,
+      total
+    );
 
- let remain=Math.max(total-done,0);
+  let remain =
+    Math.max(
+      total-done,
+      0
+    );
 
- document.getElementById('progress').textContent=
- `📚 Completed: ${done} / ${total} | Remaining: ${remain}`;
+
+  document.getElementById(
+    'progress'
+  ).textContent =
+
+  `📚 Completed: ${done} / ${total} | Remaining: ${remain}`;
+
 }
+
+
+/* ============================================================
+   WORD LIST
+============================================================ */
 
 function renderList(){
 
- document.getElementById('list').innerHTML=
- words.map(w=>`
- <div class="item">
-   <div>${w.german}</div>
-   <div>${w.english}</div>
-   <div>${w.comment||''}</div>
- </div>
- `).join('');
+  document.getElementById(
+    'list'
+  ).innerHTML =
+
+  words.map(w=>`
+
+    <div class="item">
+
+      <div>
+        ${w.german}
+      </div>
+
+      <div>
+        ${w.english}
+      </div>
+
+      <div>
+        ${w.comment || ''}
+      </div>
+
+    </div>
+
+  `).join('');
+
 }
+
+
+/* ============================================================
+   GOOGLE SHEET LOADING
+============================================================ */
 
 function loadSheet(){
 
- const old=document.getElementById('sheetLoader');
+  const old =
+    document.getElementById(
+      'sheetLoader'
+    );
 
- if(old) old.remove();
 
- const s=document.createElement('script');
+  if(old)
+    old.remove();
 
- s.id='sheetLoader';
 
- s.src =
- 'https://docs.google.com/spreadsheets/d/'+SHEET_ID+
- '/gviz/tq?tqx=responseHandler:sheetCallback;headers=1&gid='+GID+
- '&tq=select A,B,C&t='+(Date.now());
+  const s =
+    document.createElement(
+      'script'
+    );
 
- document.body.appendChild(s);
+
+  s.id =
+    'sheetLoader';
+
+
+  s.src =
+    'https://docs.google.com/spreadsheets/d/'
+    + SHEET_ID
+    + '/gviz/tq?tqx=responseHandler:sheetCallback;headers=1'
+    + '&gid='
+    + GID
+    + '&tq=select%20A,B,C'
+    + '&t='
+    + Date.now();
+
+
+  document.body.appendChild(s);
+
 }
+
+
+/* ============================================================
+   SHEET CALLBACK
+============================================================ */
 
 function sheetCallback(data){
 
- try{
+  try{
 
-   const rows=data.table.rows;
+    const rows =
+      data.table.rows;
 
-   words=rows.map(r=>({
 
-     german:(r.c[0]&&r.c[0].v)||'',
+    words =
+      rows.map(r=>({
 
-     english:(r.c[1]&&r.c[1].v)||'',
+        german:
+          (r.c[0] && r.c[0].v) || '',
 
-     comment:(r.c[2]&&r.c[2].v)||''
+        english:
+          (r.c[1] && r.c[1].v) || '',
 
-   })).filter(w=>w.german && w.english);
+        comment:
+          (r.c[2] && r.c[2].v) || ''
 
-   renderList();
+      }))
+      .filter(
+        w =>
+          w.german &&
+          w.english
+      );
 
-   buildRangeFilters();
 
-   loadSelectedRanges();
+    renderList();
 
-   loadQueue();
+    buildRangeFilters();
 
-   if(queue.length===0){
+    loadSelectedRanges();
 
-     randomizeQueue();
+    loadQueue();
 
-   }else{
+    loadSpeakingSettings();
 
-     nextQuestion();
-   }
 
- }catch(e){
+    if(queue.length===0){
 
-   document.getElementById('question').textContent=
-   'Failed loading sheet';
+      randomizeQueue();
 
- }
+    }else{
+
+      /*
+       * Validate queue against current
+       * spreadsheet size.
+       */
+
+      queue =
+        queue.filter(
+          i =>
+            i >= 0 &&
+            i < words.length
+        );
+
+
+      if(queue.length===0){
+
+        randomizeQueue();
+
+      }else{
+
+        if(
+          queueIndex < 0 ||
+          queueIndex >= queue.length
+        ){
+
+          queueIndex=0;
+
+        }
+
+        nextQuestion();
+
+      }
+
+    }
+
+  }catch(e){
+
+    console.error(e);
+
+    document.getElementById(
+      'question'
+    ).textContent =
+      'Failed loading sheet';
+
+  }
+
 }
+
+
+/* ============================================================
+   NEXT QUESTION
+============================================================ */
 
 function nextQuestion(){
 
- updateProgress();
+  updateProgress();
 
- if(queueIndex>=queue.length){
 
-   document.getElementById('question').innerHTML=
-   '🎉 All words completed.<br><span class="muted">Press Randomize</span>';
+  if(queueIndex>=queue.length){
 
-   return;
- }
+    document.getElementById(
+      'question'
+    ).innerHTML =
 
- current=words[queue[queueIndex]];
+    '🎉 All words completed.'
+    + '<br>'
+    + '<span class="muted">'
+    + 'Press Randomize'
+    + '</span>';
 
- const mode=document.getElementById('mode').value;
 
- if(mode==='en-de'){
+    current=null;
 
-   document.getElementById('question').innerHTML=
+    return;
 
-   current.english+
+  }
 
-   (current.comment?
 
-   '<div style="font-size:16px;color:#64748b;margin-top:8px">💡 '+current.comment+'</div>':'');
+  current =
+    words[
+      queue[queueIndex]
+    ];
 
- }else{
 
-   document.getElementById('question').textContent=
-   current.german;
- }
+  const mode =
+    document.getElementById(
+      'mode'
+    ).value;
 
- document.getElementById('answer').value='';
 
- document.getElementById('result').textContent='';
+  if(mode==='en-de'){
+
+    document.getElementById(
+      'question'
+    ).innerHTML =
+
+    current.english +
+
+    (
+      current.comment
+
+      ?
+
+      '<div style="font-size:16px;color:#64748b;margin-top:8px">'
+      + '💡 '
+      + current.comment
+      + '</div>'
+
+      :
+
+      ''
+    );
+
+  }else{
+
+    document.getElementById(
+      'question'
+    ).textContent =
+      current.german;
+
+  }
+
+
+  document.getElementById(
+    'answer'
+  ).value='';
+
+
+  document.getElementById(
+    'result'
+  ).textContent='';
+
 }
+
+
+/* ============================================================
+   NORMALIZE ANSWER
+============================================================ */
 
 function normalize(s){
 
- return (s||'').toLowerCase().trim();
+  return (s||'')
+    .toLowerCase()
+    .trim();
+
 }
+
+
+/* ============================================================
+   CHECK ANSWER
+============================================================ */
 
 function checkAnswer(){
 
- if(!current) return;
+  if(!current)
+    return;
 
- const mode=document.getElementById('mode').value;
 
- const correct=
- mode==='en-de'
- ? current.german
- : current.english;
+  const mode =
+    document.getElementById(
+      'mode'
+    ).value;
 
- const ans=document.getElementById('answer').value;
 
- if(normalize(ans)===normalize(correct)){
+  const correct =
+    mode==='en-de'
+      ? current.german
+      : current.english;
 
-   document.getElementById('result').innerHTML=
-   '<span class="ok">✅ Correct!</span>';
 
-   queueIndex++;
+  const ans =
+    document.getElementById(
+      'answer'
+    ).value;
 
-   saveQueue();
 
-   setTimeout(nextQuestion,500);
+  if(
+    normalize(ans) ===
+    normalize(correct)
+  ){
 
- }else{
+    document.getElementById(
+      'result'
+    ).innerHTML =
 
-   document.getElementById('result').innerHTML=
-   '<span class="bad">❌ Wrong.</span> Correct answer: <b>'+correct+'</b>';
- }
+    '<span class="ok">'
+    + '✅ Correct!'
+    + '</span>';
+
+
+    queueIndex++;
+
+    saveQueue();
+
+
+    setTimeout(
+      nextQuestion,
+      500
+    );
+
+  }else{
+
+    document.getElementById(
+      'result'
+    ).innerHTML =
+
+    '<span class="bad">'
+    + '❌ Wrong.'
+    + '</span> '
+    + 'Correct answer: <b>'
+    + correct
+    + '</b>';
+
+  }
+
 }
+
+
+/* ============================================================
+   TEXT TO SPEECH
+============================================================ */
+
+function getVoice(language){
+
+  const voices =
+    window.speechSynthesis
+      .getVoices();
+
+
+  if(!voices.length)
+    return null;
+
+
+  /*
+   * Try exact language first.
+   */
+
+  let voice =
+    voices.find(
+      v =>
+        v.lang.toLowerCase()
+        ===
+        language.toLowerCase()
+    );
+
+
+  /*
+   * Otherwise use language prefix.
+   */
+
+  if(!voice){
+
+    const prefix =
+      language
+        .split('-')[0]
+        .toLowerCase();
+
+
+    voice =
+      voices.find(
+        v =>
+          v.lang
+            .toLowerCase()
+            .startsWith(prefix)
+      );
+
+  }
+
+
+  return voice || null;
+
+}
+
+
+/* ============================================================
+   SPEAK
+============================================================ */
+
+function speak(text, language, callback){
+
+  window.speechSynthesis.cancel();
+
+
+  const utterance =
+    new SpeechSynthesisUtterance(
+      text
+    );
+
+
+  utterance.lang =
+    language;
+
+
+  utterance.rate =
+    speechRate;
+
+
+  const voice =
+    getVoice(language);
+
+
+  if(voice){
+
+    utterance.voice =
+      voice;
+
+  }
+
+
+  utterance.onstart =
+    function(){
+
+      document.getElementById(
+        'speakingStatus'
+      ).textContent =
+        '🔊 Speaking...';
+
+    };
+
+
+  utterance.onend =
+    function(){
+
+      if(callback)
+        callback();
+
+    };
+
+
+  utterance.onerror =
+    function(){
+
+      if(callback)
+        callback();
+
+    };
+
+
+  window.speechSynthesis.speak(
+    utterance
+  );
+
+}
+
+
+/* ============================================================
+   SPEAKING MODE
+============================================================ */
+
+function toggleSpeakingMode(){
+
+  if(speakingMode){
+
+    stopSpeakingMode();
+
+  }else{
+
+    startSpeakingMode();
+
+  }
+
+}
+
+
+/* ============================================================
+   START SPEAKING MODE
+============================================================ */
+
+function startSpeakingMode(){
+
+  if(!current){
+
+    alert(
+      'Please wait until the words are loaded.'
+    );
+
+    return;
+
+  }
+
+
+  speakingMode=true;
+
+
+  document.getElementById(
+    'speakingBtn'
+  ).textContent =
+    '⏹ Stop Speaking';
+
+
+  document.getElementById(
+    'speakingBtn'
+  ).classList.remove(
+    'speak'
+  );
+
+
+  document.getElementById(
+    'speakingBtn'
+  ).classList.add(
+    'red'
+  );
+
+
+  document.getElementById(
+    'speakingSettings'
+  ).classList.remove(
+    'disabled'
+  );
+
+
+  /*
+   * Disable normal typing controls.
+   */
+
+  document.getElementById(
+    'typingControls'
+  ).classList.add(
+    'disabled'
+  );
+
+
+  startSpeakingSequence();
+
+}
+
+
+/* ============================================================
+   STOP SPEAKING MODE
+============================================================ */
+
+function stopSpeakingMode(){
+
+  speakingMode=false;
+
+
+  stopSpeakingSequence();
+
+
+  document.getElementById(
+    'speakingBtn'
+  ).textContent =
+    '🔊 Start Speaking';
+
+
+  document.getElementById(
+    'speakingBtn'
+  ).classList.remove(
+    'red'
+  );
+
+
+  document.getElementById(
+    'speakingBtn'
+  ).classList.add(
+    'speak'
+  );
+
+
+  document.getElementById(
+    'speakingSettings'
+  ).classList.add(
+    'disabled'
+  );
+
+
+  document.getElementById(
+    'typingControls'
+  ).classList.remove(
+    'disabled'
+  );
+
+
+  document.getElementById(
+    'speakingStatus'
+  ).textContent =
+    'Speaking mode stopped.';
+
+}
+
+
+/* ============================================================
+   START SPEAKING SEQUENCE
+============================================================ */
+
+function startSpeakingSequence(){
+
+  if(!speakingMode)
+    return;
+
+
+  clearSpeakingTimer();
+
+  window.speechSynthesis.cancel();
+
+
+  if(
+    queueIndex >= queue.length
+  ){
+
+    /*
+     * Automatically reshuffle the selected
+     * words when reaching the end.
+     */
+
+    const selected =
+      getSelectedIndexes();
+
+
+    if(selected.length===0){
+
+      stopSpeakingMode();
+
+      alert(
+        'Please select at least one range.'
+      );
+
+      return;
+
+    }
+
+
+    queue =
+      [...selected];
+
+    shuffle(queue);
+
+    queueIndex=0;
+
+    saveQueue();
+
+    nextQuestion();
+
+  }
+
+
+  speakingStep=0;
+
+
+  /*
+   * Step 1:
+   * Speak the question.
+   */
+
+  speakCurrentQuestion();
+
+}
+
+
+/* ============================================================
+   SPEAK CURRENT QUESTION
+============================================================ */
+
+function speakCurrentQuestion(){
+
+  if(!speakingMode)
+    return;
+
+
+  if(!current)
+    return;
+
+
+  const mode =
+    document.getElementById(
+      'mode'
+    ).value;
+
+
+  let text;
+
+  let language;
+
+
+  if(mode==='en-de'){
+
+    text =
+      current.english;
+
+    language =
+      'en-US';
+
+  }else{
+
+    text =
+      current.german;
+
+    language =
+      'de-DE';
+
+  }
+
+
+  document.getElementById(
+    'speakingStatus'
+  ).textContent =
+    '🔊 Question';
+
+
+  speak(
+    text,
+    language,
+    function(){
+
+      if(!speakingMode)
+        return;
+
+
+      /*
+       * Wait before speaking answer.
+       */
+
+      document.getElementById(
+        'speakingStatus'
+      ).textContent =
+        '⏳ Waiting for your answer...';
+
+
+      speakingTimer =
+        setTimeout(
+          speakCurrentAnswer,
+          questionDelay * 1000
+        );
+
+    }
+
+  );
+
+}
+
+
+/* ============================================================
+   SPEAK CURRENT ANSWER
+============================================================ */
+
+function speakCurrentAnswer(){
+
+  if(!speakingMode)
+    return;
+
+
+  if(!current)
+    return;
+
+
+  const mode =
+    document.getElementById(
+      'mode'
+    ).value;
+
+
+  let text;
+
+  let language;
+
+
+  if(mode==='en-de'){
+
+    text =
+      current.german;
+
+    language =
+      'de-DE';
+
+  }else{
+
+    text =
+      current.english;
+
+    language =
+      'en-US';
+
+  }
+
+
+  document.getElementById(
+    'speakingStatus'
+  ).textContent =
+    '🔊 Answer';
+
+
+  speak(
+    text,
+    language,
+    function(){
+
+      if(!speakingMode)
+        return;
+
+
+      /*
+       * Wait before next word.
+       */
+
+      document.getElementById(
+        'speakingStatus'
+      ).textContent =
+        '⏳ Next word...';
+
+
+      speakingTimer =
+        setTimeout(
+          goToNextSpeakingWord,
+          answerDelay * 1000
+        );
+
+    }
+
+  );
+
+}
+
+
+/* ============================================================
+   NEXT SPEAKING WORD
+============================================================ */
+
+function goToNextSpeakingWord(){
+
+  if(!speakingMode)
+    return;
+
+
+  queueIndex++;
+
+
+  /*
+   * Save progress.
+   */
+
+  saveQueue();
+
+
+  /*
+   * If the selected sequence has ended,
+   * create a new randomized sequence.
+   */
+
+  if(
+    queueIndex >= queue.length
+  ){
+
+    const selected =
+      getSelectedIndexes();
+
+
+    if(selected.length===0){
+
+      stopSpeakingMode();
+
+      alert(
+        'Please select at least one range.'
+      );
+
+      return;
+
+    }
+
+
+    queue =
+      [...selected];
+
+    shuffle(queue);
+
+    queueIndex=0;
+
+  }
+
+
+  saveQueue();
+
+
+  /*
+   * Show next word.
+   */
+
+  nextQuestion();
+
+
+  /*
+   * Continue automatically.
+   */
+
+  startSpeakingSequence();
+
+}
+
+
+/* ============================================================
+   STOP SPEAKING SEQUENCE
+============================================================ */
+
+function stopSpeakingSequence(){
+
+  clearSpeakingTimer();
+
+
+  if(
+    'speechSynthesis'
+    in window
+  ){
+
+    window.speechSynthesis.cancel();
+
+  }
+
+}
+
+
+/* ============================================================
+   CLEAR TIMER
+============================================================ */
+
+function clearSpeakingTimer(){
+
+  if(
+    speakingTimer !== null
+  ){
+
+    clearTimeout(
+      speakingTimer
+    );
+
+    speakingTimer=null;
+
+  }
+
+}
+
+
+/* ============================================================
+   MODE CHANGE
+============================================================ */
+
+document.getElementById(
+  'mode'
+).addEventListener(
+  'change',
+  function(){
+
+    /*
+     * Stop the current speech.
+     */
+
+    stopSpeakingSequence();
+
+
+    /*
+     * Update the displayed question.
+     */
+
+    nextQuestion();
+
+
+    /*
+     * If speaking mode is active,
+     * restart using the new direction.
+     */
+
+    if(speakingMode){
+
+      startSpeakingSequence();
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   SPEAKING SETTINGS
+============================================================ */
+
+document.getElementById(
+  'questionDelay'
+).addEventListener(
+  'input',
+  function(){
+
+    questionDelay =
+      Number(
+        this.value
+      );
+
+
+    updateSpeakingSettingsDisplay();
+
+    saveSpeakingSettings();
+
+  }
+);
+
+
+document.getElementById(
+  'answerDelay'
+).addEventListener(
+  'input',
+  function(){
+
+    answerDelay =
+      Number(
+        this.value
+      );
+
+
+    updateSpeakingSettingsDisplay();
+
+    saveSpeakingSettings();
+
+  }
+);
+
+
+document.getElementById(
+  'speechRate'
+).addEventListener(
+  'input',
+  function(){
+
+    speechRate =
+      Number(
+        this.value
+      );
+
+
+    updateSpeakingSettingsDisplay();
+
+    saveSpeakingSettings();
+
+  }
+);
+
+
+/* ============================================================
+   SPEECH VOICES
+============================================================ */
+
+if(
+  'speechSynthesis'
+  in window
+){
+
+  window.speechSynthesis.onvoiceschanged =
+    function(){
+
+      window.speechSynthesis
+        .getVoices();
+
+    };
+
+}
+
+
+/* ============================================================
+   LOAD APPLICATION
+============================================================ */
 
 loadSheet();
 
@@ -543,3 +2087,4 @@ loadSheet();
 
 </body>
 </html>
+```
