@@ -433,6 +433,22 @@ Loading...
 
 </div>
 
+<!-- SPEAKING MODE ANSWER DISPLAY -->
+<div
+  id="speakingAnswer"
+  style="
+    display:none;
+    font-size:26px;
+    font-weight:bold;
+    margin:10px 0 15px;
+    padding:12px 16px;
+    border-radius:10px;
+    background:#ecfdf5;
+    color:#166534;
+  ">
+</div>
+
+
 
 <!-- NORMAL TYPING MODE -->
 
@@ -1255,6 +1271,13 @@ function nextQuestion(){
     'result'
   ).textContent='';
 
+  // Hide the answer until it is spoken.
+  const speakingAnswer =
+    document.getElementById('speakingAnswer');
+
+  speakingAnswer.style.display = 'none';
+  speakingAnswer.textContent = '';
+
 }
 
 
@@ -1601,6 +1624,12 @@ function stopSpeakingMode(){
   ).textContent =
     'Speaking mode stopped.';
 
+  const speakingAnswer =
+    document.getElementById('speakingAnswer');
+
+  speakingAnswer.style.display = 'none';
+  speakingAnswer.textContent = '';
+
 }
 
 
@@ -1797,6 +1826,13 @@ function speakCurrentAnswer(){
 
   }
 
+
+  // Show the answer on screen while it is being spoken.
+  const speakingAnswer =
+    document.getElementById('speakingAnswer');
+
+  speakingAnswer.textContent = '🔊 ' + text;
+  speakingAnswer.style.display = 'block';
 
   document.getElementById(
     'speakingStatus'
